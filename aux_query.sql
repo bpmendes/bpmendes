@@ -5,8 +5,8 @@ select cd_expressao,
     ds_expressao_mx
 from DIC_EXPRESSAO a
 where 1=1
-and lower(a.ds_expressao_br) = 'motivo de não conformidade'
---and lower(a.ds_expressao_us) = 'reference date'
+--and lower(a.ds_expressao_br) = 'motivo de não conformidade'
+and lower(a.ds_expressao_us) = 'reference date'
 --and lower(a.ds_expressao_mx) = 'data de referência'
 --and lower(ds_expressao_br) like '%apo%'
 --and lower(ds_expressao_us) like '%não conforme%'

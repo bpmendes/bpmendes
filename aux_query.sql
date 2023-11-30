@@ -1,3 +1,25 @@
+-- Gravar log
+ds_alteracao_rastre_w	:= substr(	' - nr_seq_analise_apo_w: '||nr_seq_analise_apo_w, 1, 2000);
+gravar_log_tasy(cd_log_p => 50, ds_log_p => ds_alteracao_rastre_w, nm_usuario_p => 'bpmendes');
+
+-- Consultar log gerado
+select to_char(dt_atualizacao,'dd/mm/yyyy hh24:mi:ss') dt_atualizacao,
+    ds_log
+from log_tasy
+where cd_log = 50
+and nm_usuario = 'bpmendes'
+order by dt_atualizacao desc;
+
+-- Localizar nome de objetos
+select *
+from OBJETO_SISTEMA
+where nr_sequencia = 10062764;
+
+-- Localizar texto por expressões
+select *
+from dic_objeto
+where cd_exp_informacao = 616556;
+
 -- Localizar expressões
 select cd_expressao,
     ds_expressao_br,
@@ -5,37 +27,60 @@ select cd_expressao,
     ds_expressao_mx
 from DIC_EXPRESSAO a
 where 1=1
---and lower(a.ds_expressao_br) = 'motivo de não conformidade'
+and lower(a.ds_expressao_br) = 'data prevista'
 --and lower(a.ds_expressao_us) = 'reference date'
-and lower(a.ds_expressao_mx) = 'data de referência'
---and lower(ds_expressao_br) like '%apo%'
+--and lower(a.ds_expressao_mx) = 'data de referência'
+--and lower(ds_expressao_br) like '%prescr%vencida%'
 --and lower(ds_expressao_us) like '%não conforme%'
 --and lower(ds_expressao_mx) like '%não conforme%'
 --and cd_expressao = 735610
-order by a.cd_expressao desc;
+order by a.ds_expressao_br, a.cd_expressao desc;
 
 -- Alterar parâmetro usuário
 update FUNCAO_PARAM_USUARIO
-set vl_parametro = 'F'
-where cd_funcao = 252
-and nr_sequencia = 1
+set vl_parametro = 'E'
+where cd_funcao = 3130
+and nr_sequencia = 518
 and nm_usuario_param = 'bpmendes';
 commit;
 /
 -- Valor parâmetro usuário
-select b.nr_sequencia,
+select /*obter_nome_perfil(c.cd_perfil) ds_perfil,
+    c.cd_perfil,*/
+    b.cd_funcao || ' - ' || obter_nome_funcao(b.cd_funcao) nm_funcao,
+    b.nr_sequencia,
     b.ds_parametro,
     a.vl_parametro
 from funcao_param_usuario a,
-    funcao_parametro b
-where a.cd_funcao = b.cd_funcao
+    funcao_parametro b/*,
+    funcao_param_perfil c*/
+where 1=1/*b.cd_funcao = c.cd_funcao
+and b.nr_sequencia = c.nr_sequencia*/
+and a.cd_funcao = b.cd_funcao
 and a.nr_sequencia = b.nr_sequencia
 and a.vl_parametro is not null
-and a.cd_funcao = 252
---and a.nr_sequencia = 1
-and a.nm_usuario_param = 'bpmendes'
---and lower(b.ds_parametro) like '%farm%'
-order by 1;
+--and nvl(b.ie_situacao_html5,'A') = 'A'
+--and c.cd_funcao = 1691
+and a.cd_funcao = 3130
+and a.nr_sequencia = 306
+--and a.nm_usuario_param = 'bpmendes'
+--and lower(obter_nome_funcao(b.cd_funcao)) like '%rep%'
+--and lower(b.ds_parametro) like '%adep%'
+group by b.nr_sequencia,
+    b.ds_parametro,
+    a.vl_parametro,
+    b.cd_funcao/*,
+    c.cd_perfil*/
+order by b.ds_parametro;
+
+
+update usuario
+set cd_pessoa_fisica = 632432 /*PF normal*/,
+    IE_TIPO_EVOLUCAO = 3 /*Tipo evolução Médico*/
+-- set cd_pessoa_fisica = 632444 /*PF médico*/
+where nm_usuario = 'bpmendes';
+commit;
+
 
 alter session set current_schema=Tasy;
 
@@ -44,8 +89,9 @@ select obter_nome_funcao(a.cd_funcao),
     a.*
 from OBJETO_SCHEMATIC a
 where 1=1 
---and lower(a.nm_tabela) = 'mprev_partic_ciclo_atend'
-and upper(a.nm_tabela) = 'MPREV_MODULO_ATEND';
+and lower(a.nm_tabela) = 'rep_arredonda_diluicao'
+--and upper(a.nm_tabela) = 'FAR_ETAPA_MAT_ADIC'
+;
 
 select *
 from funcao_schematic
@@ -61,9 +107,10 @@ select b.NR_SEQUENCIA,
 from OBJ_SCHEMATIC_EVENTO_ACAO a,
     OBJ_SCHEMATIC_EVENTO b
 where 1=1
-AND b.nm_acao = 'GET_IF_CAN_TRANSFER'
+--AND b.nm_acao = 'GET_IF_CAN_TRANSFER'
 --AND a.NR_SEQ_OBJ_PROC = 84935
 --AND lower(SUBSTR((SELECT X.NM_OBJETO FROM OBJETO_SISTEMA X WHERE X.NR_SEQUENCIA = A.NR_SEQ_OBJ_PROC),1,255)) = 'liberar_prescr_farmacia_js'
+AND upper(SUBSTR((SELECT X.NM_OBJETO FROM OBJETO_SISTEMA X WHERE X.NR_SEQUENCIA = A.NR_SEQ_OBJ_PROC),1,255)) = 'GPT_RECRIAR_MAT_QUIMIO'
 and b.NR_SEQUENCIA = a.NR_SEQ_OBJ_EVENTO
 group by b.NR_SEQUENCIA,
     b.nm_acao,
@@ -153,14 +200,14 @@ where ospr.NR_SEQ_IMPACTO = os.nr_sequencia
  and os.NR_SEQ_ORDEM_SERV = 2257949;
  
  -----Liberar acesso ao shematic
-insert into funcao_schematic_lib values(FUNCAO_SCHEMATIC_LIB_SEQ.nextval,sysdate,'bpmendes',sysdate,'bpmendes','sschatz',3825,'T');
+insert into funcao_schematic_lib values(FUNCAO_SCHEMATIC_LIB_SEQ.nextval,sysdate,'bpmendes',sysdate,'bpmendes','lfreichert',10852,'T');
 commit;
 
 ------Pesquisa função schematic
 select *
 from funcao_schematic_lib
-where nm_usuario_liberado = 'sschatz'
-and nr_seq_funcao_schematic = 702833;
+where nm_usuario_liberado = 'lfreichert'
+and nr_seq_funcao_schematic = 10852;
 
 select nr_sequencia,
     ds_schematic
@@ -186,12 +233,12 @@ where C.NR_SEQ_SUB_GRP IN ('B', 'L')
 AND C.NR_SEQUENCIA = T.NR_SEQ_ORDER_TYPE
 AND P.NR_SEQUENCIA = T.NR_SEQ_PROC_INTERNO
 AND T.NR_SEQ_PROC_INTERNO = 34605; -- valor da tela
-
+LIBERAR_PRESCRICAO;
 
 -- Localizador de objetos
 select    substr(a.nm_objeto,1,30) nome_objeto,
     a.qt_ocorrencia
-from    table(localizacao_objetos_pck.obter_objetos_comando('insert','FAR_ESTOQUE_CABINE','CD_ESTAB_LOCAL_ESTOQUE')) a
+from    table(localizacao_objetos_pck.obter_objetos_comando('update','prescr_medica','dt_liberacao')) a
 order by 1;
 far_estoque_cabine
 select *

@@ -1,3 +1,27 @@
+-- Manutenção do dicionário de dados > Pacote
+select  to_char(a.created_at,'dd/mm/yyyy hh24:mi:ss') as created_at,
+    a.status, 
+    a.*
+from tasy.DICT_INTEGRATION_LOGSET a
+where 1=1
+and a.CREATED_BY = 'bpmendes'
+and a.CREATED_AT between tasy.inicio_dia(sysdate - 30) and tasy.fim_dia(sysdate)
+order by a.created_at desc;
+
+-- Manutenção do dicionário de dados > Pacote > Releases
+select   to_char(a.event_date,'dd/mm/yyyy hh24:mi:ss') as event_date,
+    a.status,
+    a.table_name,
+    a.*    
+from tasy.DICT_INTEGRATION_STAGE a
+where 1=1
+--and SERVICE_ORDER = 2924234
+and TASY_USER = 'bpmendes'
+and a.event_date between tasy.inicio_dia(sysdate - 30) and tasy.fim_dia(sysdate)
+order by a.event_date desc,
+    a.status,
+    a.table_name;
+
 -- Gravar log
 ds_alteracao_rastre_w	:= substr(	' - nr_seq_analise_apo_w: '||nr_seq_analise_apo_w, 1, 2000);
 gravar_log_tasy(cd_log_p => 50, ds_log_p => ds_alteracao_rastre_w, nm_usuario_p => 'bpmendes');
@@ -11,14 +35,23 @@ and nm_usuario = 'bpmendes'
 order by dt_atualizacao desc;
 
 -- Localizar nome de objetos
-select *
+select nr_sequencia,
+    nm_objeto
 from OBJETO_SISTEMA
-where nr_sequencia = 10062764;
+where 1=1
+--and nr_sequencia = 10062764
+and nm_objeto = 'ATUALIZA_FATOR_PROGNOSTICO';
 
 -- Localizar texto por expressões
-select *
-from dic_objeto
-where cd_exp_informacao = 616556;
+select cd_funcao,
+    obter_nome_funcao(cd_funcao) nm_funcao,
+    a.nr_sequencia,
+    obter_desc_expressao(cd_exp_informacao) ds_expressao    
+from dic_objeto a
+where 1=1
+--and cd_exp_informacao = 195023
+and nr_sequencia = 195023
+;
 
 -- Localizar expressões
 select cd_expressao,
@@ -27,10 +60,10 @@ select cd_expressao,
     ds_expressao_mx
 from DIC_EXPRESSAO a
 where 1=1
-and lower(a.ds_expressao_br) = 'data prevista'
+--and lower(a.ds_expressao_br) = 'a data da prescrição não pode ser inferior a 24 horas'
 --and lower(a.ds_expressao_us) = 'reference date'
 --and lower(a.ds_expressao_mx) = 'data de referência'
---and lower(ds_expressao_br) like '%prescr%vencida%'
+and lower(ds_expressao_br) like '%a data da prescrição não pode ser inferior%'
 --and lower(ds_expressao_us) like '%não conforme%'
 --and lower(ds_expressao_mx) like '%não conforme%'
 --and cd_expressao = 735610
@@ -38,7 +71,7 @@ order by a.ds_expressao_br, a.cd_expressao desc;
 
 -- Alterar parâmetro usuário
 update FUNCAO_PARAM_USUARIO
-set vl_parametro = 'E'
+set vl_parametro = 'F'
 where cd_funcao = 3130
 and nr_sequencia = 518
 and nm_usuario_param = 'bpmendes';
@@ -62,8 +95,8 @@ and a.vl_parametro is not null
 --and nvl(b.ie_situacao_html5,'A') = 'A'
 --and c.cd_funcao = 1691
 and a.cd_funcao = 3130
-and a.nr_sequencia = 306
---and a.nm_usuario_param = 'bpmendes'
+and a.nr_sequencia = 518
+and a.nm_usuario_param = 'bpmendes'
 --and lower(obter_nome_funcao(b.cd_funcao)) like '%rep%'
 --and lower(b.ds_parametro) like '%adep%'
 group by b.nr_sequencia,
@@ -89,8 +122,8 @@ select obter_nome_funcao(a.cd_funcao),
     a.*
 from OBJETO_SCHEMATIC a
 where 1=1 
-and lower(a.nm_tabela) = 'rep_arredonda_diluicao'
---and upper(a.nm_tabela) = 'FAR_ETAPA_MAT_ADIC'
+--and lower(a.nm_tabela) = 'rep_arredonda_diluicao'
+and upper(a.nm_tabela) = 'ATUALIZA_FATOR_PROGNOSTICO'
 ;
 
 select *
@@ -108,9 +141,9 @@ from OBJ_SCHEMATIC_EVENTO_ACAO a,
     OBJ_SCHEMATIC_EVENTO b
 where 1=1
 --AND b.nm_acao = 'GET_IF_CAN_TRANSFER'
---AND a.NR_SEQ_OBJ_PROC = 84935
+AND a.NR_SEQ_OBJ_PROC = 78097
 --AND lower(SUBSTR((SELECT X.NM_OBJETO FROM OBJETO_SISTEMA X WHERE X.NR_SEQUENCIA = A.NR_SEQ_OBJ_PROC),1,255)) = 'liberar_prescr_farmacia_js'
-AND upper(SUBSTR((SELECT X.NM_OBJETO FROM OBJETO_SISTEMA X WHERE X.NR_SEQUENCIA = A.NR_SEQ_OBJ_PROC),1,255)) = 'GPT_RECRIAR_MAT_QUIMIO'
+--AND upper(SUBSTR((SELECT X.NM_OBJETO FROM OBJETO_SISTEMA X WHERE X.NR_SEQUENCIA = A.NR_SEQ_OBJ_PROC),1,255)) = 'GPT_RECRIAR_MAT_QUIMIO'
 and b.NR_SEQUENCIA = a.NR_SEQ_OBJ_EVENTO
 group by b.NR_SEQUENCIA,
     b.nm_acao,
@@ -238,7 +271,7 @@ LIBERAR_PRESCRICAO;
 -- Localizador de objetos
 select    substr(a.nm_objeto,1,30) nome_objeto,
     a.qt_ocorrencia
-from    table(localizacao_objetos_pck.obter_objetos_comando('update','prescr_medica','dt_liberacao')) a
+from    table(localizacao_objetos_pck.obter_objetos_comando('insert','fator_prog_loco_reg','nr_sequencia')) a
 order by 1;
 far_estoque_cabine
 select *

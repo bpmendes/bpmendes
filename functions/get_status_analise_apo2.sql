@@ -1,7 +1,5 @@
-create or replace function get_status_analise_apo2(nr_atendimento_p number,
-                                                  cd_pessoa_fisica_p varchar2,
-                                                  nr_prescricao_p prescr_medica.nr_prescricao%type,
-                                                  ie_opcao_p varchar2 default null) return varchar2 is
+create or replace function get_status_analise_apo2(nr_prescricao_p  IN prescr_medica.nr_prescricao%type,
+                                                   ie_opcao_p       IN varchar2 default null) return varchar2 is
 
 /*
 ie_opcao_p = 1: Retorna ordenacao (1-Pendente, 2-Em analise, 3-Finalizada)
